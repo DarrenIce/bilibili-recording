@@ -37,7 +37,7 @@
           <span>操作</span>
         </el-space>
       </template>
-      <el-menu-item index="2-1">
+      <el-menu-item index="2-1" @click="onAddRoom()">
         添加房间监控
       </el-menu-item>
       <el-menu-item index="2-2">
@@ -45,13 +45,25 @@
       </el-menu-item>
     </el-submenu>
   </el-menu>
+  <AddRoomComponent></AddRoomComponent>
 </template>
 
 <script lang="ts">
+import mitter from '@/define/mitt'
 import { defineComponent } from 'vue'
+import AddRoomComponent from '@/components/AddRoom.vue'
 
 export default defineComponent({
-  name: 'SideMenu'
+  name: 'SideMenu',
+  components: {
+    AddRoomComponent
+  },
+  methods: {
+    onAddRoom() {
+      console.log(1)
+      mitter.emit('changeAddRoomVisible', true);
+    }
+  }
 })
 </script>
 

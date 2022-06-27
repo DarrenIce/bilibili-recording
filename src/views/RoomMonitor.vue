@@ -1,6 +1,6 @@
 <template>
   <el-row :gutter="10">
-    <el-col :span="8">
+    <el-col :span="5">
       <el-card class="box-card">
         <template #header>
           <div class="card-header">
@@ -57,7 +57,7 @@
       </template>
     </el-table-column>
   </el-table>
-  <RoomInfoComponent v-model:isShow="showRoomInfo" v-model:room="room"></RoomInfoComponent>
+  <RoomInfoComponent></RoomInfoComponent>
 </template>
 
 <script lang="ts">
@@ -71,6 +71,7 @@ import {
   state2Name,
 } from "@/define/methods";
 import RoomInfoComponent from "@/components/RoomInfo.vue"
+import mitter from '@/define/mitt'
 
 interface filter {
   text: string;
@@ -265,6 +266,8 @@ export default defineComponent({
       this.showRoomInfo = true;
       this.room = room;
       console.log(room)
+      mitter.emit('changeRoomInfoVisible', this.showRoomInfo);
+      mitter.emit('changeRoomInfo', this.room);
     }
   },
 });

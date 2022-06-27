@@ -1,11 +1,11 @@
 <template>
-  <el-drawer v-model="isShowRoomInfo" title="房间信息" size="45%">
-    <el-descriptions
-      class="margin-top"
-      :column="2"
-      :data="roomInfo"
-      border
-    >
+  <el-drawer
+    v-model="isShowRoomInfo"
+    title="房间信息"
+    size="45%"
+    @close="onCancel()"
+  >
+    <el-descriptions class="margin-top" :column="2" :data="roomInfo" border>
       <el-descriptions-item>
         <template #label>
           <i class="el-icon-user"></i>
@@ -104,9 +104,6 @@
       <span>编辑房间信息</span>
     </el-divider>
     <el-form :model="roomInfo">
-      <el-form-item label="房间ID" label-width="120px">
-        <el-input v-model="roomInfo.RoomID" autocomplete="off"></el-input>
-      </el-form-item>
       <el-row>
         <el-col :span="12">
           <el-form-item>
@@ -135,16 +132,24 @@
         <el-col :span="12">
           <el-form-item label="录制开始时间" label-width="120px">
             <el-time-picker
-              v-model="roomInfo.StartTime"
+              v-model="starttime"
               :disabled="roomInfo.RecordMode"
+              format="HH:mm"
+              @change="getStartTime()"
+              size="small"
+              style="width: 100px"
             ></el-time-picker>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="录制结束时间" label-width="120px">
             <el-time-picker
-              v-model="roomInfo.EndTime"
+              v-model="endtime"
               :disabled="roomInfo.RecordMode"
+              format="HH:mm"
+              @change="getEndTime()"
+              size="small"
+              style="width: 100px"
             ></el-time-picker>
           </el-form-item>
         </el-col>
@@ -243,31 +248,41 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <el-row>
+        <el-col :span="12">
+          <el-form-item>
+            <el-switch
+              v-model="roomInfo.SaveDanmu"
+              active-color="#13ce66"
+              inactive-color="#ff4949"
+              active-text="录制弹幕"
+              inactive-text="不录制弹幕"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
-    <template #footer>
-      <el-button-group>
-        <el-button
-          type="danger"
-          icon="el-icon-delete"
-          @click="onDelete(roomInfo)"
-          >删除
-        </el-button>
-        <el-button icon="el-icon-circle-close" @click="onCancel()"
-          >取消</el-button
-        >
-        <el-button icon="el-icon-circle-check" type="primary" @click="onSubmit(roomInfo)"
-          >确定</el-button
-        >
-        <el-button icon="el-icon-refresh" type="primary" @click="onDecode(roomInfo)"
-          >立即转码</el-button
-        >
-      </el-button-group>
-    </template>
+    <!-- <template #footer> -->
+    <el-button-group>
+      <el-button type="danger" @click="onDelete()">
+        <el-icon><Delete /></el-icon>删除
+      </el-button>
+      <el-button @click="onCancel()">
+        <el-icon><Close /></el-icon>取消
+      </el-button>
+      <el-button type="primary" @click="onSubmit()"
+        ><el-icon><Check /></el-icon>确定</el-button
+      >
+      <el-button type="primary" @click="onDecode()"
+        ><el-icon><Promotion /></el-icon>立即转码</el-button
+      >
+    </el-button-group>
+    <!-- </template> -->
   </el-drawer>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from "vue";
+import { defineComponent } from "vue";
 import { RoomInfo } from "@/define/interface";
 import {
   status2Type,
@@ -275,26 +290,59 @@ import {
   state2Type,
   state2Name,
 } from "@/define/methods";
+import mitter from "@/define/mitt";
+import { ip, port } from "@/define/const";
+import { ElNotification } from "element-plus";
+import { NotificationType } from "element-plus/lib/el-notification/src/notification.type";
 
 export default defineComponent({
-  props: {
-    isShow: Boolean,
-    room: Object as PropType<RoomInfo>,
-  },
-  emits: [
-    'update:isShow',
-    'update:room',
-  ],
-  setup(props) {
-    console.log(props)
+  data() {
+    let roomInfo: RoomInfo = {
+      RoomID: "",
+      Platform: "",
+      LiveStatus: 0,
+      State: 0,
+      RecordMode: true,
+    };
     return {
-      isShowRoomInfo: props.isShow,
-      roomInfo: props.room,
+      isShowRoomInfo: false,
+      roomInfo,
       status2Name,
       status2Type,
       state2Type,
       state2Name,
+      starttime: new Date(),
+      endtime: new Date(),
     };
+  },
+  mounted() {
+    const handleVisible = (e: any) => {
+      console.log(e);
+      this.isShowRoomInfo = e;
+    };
+    mitter.on("changeRoomInfoVisible", handleVisible);
+    mitter.on("changeRoomInfo", (e: any) => {
+      console.log(e);
+      this.roomInfo = e;
+      this.starttime = new Date(
+        `2022T${this.roomInfo.StartTime?.substr(
+          0,
+          2
+        )}:${this.roomInfo.StartTime?.substr(
+          2,
+          2
+        )}:${this.roomInfo.StartTime?.substr(4, 2)}`
+      );
+      this.endtime = new Date(
+        `2022T${this.roomInfo.EndTime?.substr(
+          0,
+          2
+        )}:${this.roomInfo.EndTime?.substr(
+          2,
+          2
+        )}:${this.roomInfo.EndTime?.substr(4, 2)}`
+      );
+    });
   },
   methods: {
     roomID2URL(item: RoomInfo) {
@@ -307,19 +355,168 @@ export default defineComponent({
       }
       return "";
     },
-    onDelete(item: RoomInfo) {
-      console.log(item);
+    onDelete() {
+      fetch(`${ip}:${port}/roomhandle`, {
+        method: "post",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods":
+            "POST, GET, OPTIONS, PUT, DELETE,UPDATE",
+          "Access-Control-Allow-Headers":
+            "Access-Control-Allow-Methods, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
+          "Access-Control-Allow-Credentials": "true",
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+          handle: "delete",
+          data: this.getSubmitInfo(),
+        }),
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          console.log(json);
+          let ttype: NotificationType = '';
+          let title: string = '';
+          let msg: string = ''
+          if (json['msg']) {
+            ttype = 'success';
+            title = 'Success';
+            msg = 'Delete success';
+          } else {
+            ttype = 'error';
+            title = 'Failed';
+            msg = 'Delete failed';
+          }
+          ElNotification({
+            title: title,
+            message: msg,
+            type: ttype,
+          });
+          this.isShowRoomInfo = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
-    onSubmit(item: RoomInfo) {
-      console.log(item);
+    onSubmit() {
+      fetch(`${ip}:${port}/roomhandle`, {
+        method: "post",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods":
+            "POST, GET, OPTIONS, PUT, DELETE,UPDATE",
+          "Access-Control-Allow-Headers":
+            "Access-Control-Allow-Methods, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
+          "Access-Control-Allow-Credentials": "true",
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+          handle: "edit",
+          data: this.getSubmitInfo(),
+        }),
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          console.log(json);
+          let ttype: NotificationType = '';
+          let title: string = '';
+          let msg: string = ''
+          if (json['msg']) {
+            ttype = 'success';
+            title = 'Success';
+            msg = 'Edit success';
+          } else {
+            ttype = 'error';
+            title = 'Failed';
+            msg = 'Edit failed';
+          }
+          ElNotification({
+            title: title,
+            message: msg,
+            type: ttype,
+          });
+          this.isShowRoomInfo = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
-    onDecode(item: RoomInfo) {
-      console.log(item);
+    onDecode() {
+      fetch(`${ip}:${port}/decode`, {
+        method: "post",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods":
+            "POST, GET, OPTIONS, PUT, DELETE,UPDATE",
+          "Access-Control-Allow-Headers":
+            "Access-Control-Allow-Methods, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
+          "Access-Control-Allow-Credentials": "true",
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+          roomID: this.roomInfo.RoomID,
+        }),
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          console.log(json);
+          let ttype: NotificationType = '';
+          let title: string = '';
+          let msg: string = ''
+          if (json['msg']) {
+            ttype = 'success';
+            title = 'Success';
+            msg = 'Decode success';
+          } else {
+            ttype = 'error';
+            title = 'Failed';
+            msg = 'Decode failed';
+          }
+          ElNotification({
+            title: title,
+            message: msg,
+            type: ttype,
+          });
+          this.isShowRoomInfo = false;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
     onCancel() {
       this.isShowRoomInfo = false;
-      this.$emit('update:isShow', this.isShowRoomInfo);
-    }
+      console.log(this.roomInfo.StartTime);
+      console.log(this.roomInfo.EndTime);
+    },
+    getStartTime() {
+      let tmp = this.starttime.toTimeString().split(":");
+      if (tmp?.length == 3) tmp[2] = "00";
+      this.roomInfo.StartTime = tmp?.join("");
+    },
+    getEndTime() {
+      let tmp = this.endtime.toTimeString().split(":");
+      if (tmp?.length == 3) tmp[2] = "00";
+      this.roomInfo.EndTime = tmp?.join("");
+    },
+    getSubmitInfo() {
+      return {
+        platform: this.roomInfo.Platform,
+        roomID: this.roomInfo.RoomID,
+        recordMode: this.roomInfo.RecordMode,
+        startTime: this.roomInfo.StartTime,
+        endTime: this.roomInfo.EndTime,
+        autoRecord: this.roomInfo.AutoRecord,
+        autoUpload: this.roomInfo.AutoUpload,
+        needM4a: this.roomInfo.NeedM4a,
+        mp4Compress: this.roomInfo.Mp4Compress,
+        divideByTitle: this.roomInfo.DivideByTitle,
+        cleanUpRegular: this.roomInfo.CleanUpRegular,
+        saveDuration: this.roomInfo.SaveDuration,
+        areaLock: this.roomInfo.AreaLock,
+        areaLimit: this.roomInfo.AreaLimit,
+        saveDanmu: this.roomInfo.SaveDanmu,
+      };
+    },
   },
 });
 </script>
