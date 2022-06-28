@@ -13,7 +13,7 @@ const routes = [
     component: () => import('../views/AreaInfo.vue')
   },
   {
-    path: '/livestatistics',
+    path: '/livestatistics/:anchor',
     name: 'LiveStatistics',
     component: () => import('../views/LiveStatistics.vue')
   },

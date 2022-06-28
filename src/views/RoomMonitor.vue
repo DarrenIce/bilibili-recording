@@ -15,29 +15,19 @@
       <el-result :icon="result"></el-result>
     </el-col>
   </el-row>
-  <el-table
-    :default-sort="{ prop: 'State', order: 'descending' }"
-    :data="roomTable"
-  >
+  <el-table :default-sort="{ prop: 'State', order: 'descending' }" :data="roomTable">
     <el-table-column prop="RoomID" label="房间ID" sortable />
-    <el-table-column prop="Uname" label="主播" />
-    <el-table-column
-      prop="Platform"
-      label="平台"
-      :filters="platformFilter"
-      :filter-method="filterPlatform"
-    />
-    <el-table-column
-      prop="AreaName"
-      label="分区"
-      :filters="areaFilter"
-      :filter-method="filterArea"
-    />
+    <el-table-column prop="Uname" label="主播">
+      <template #default="scope">
+        <router-link :to="'/livestatistics/' + scope.row.Uname">{{ scope.row.Uname }}</router-link>
+      </template>
+    </el-table-column>
+    <el-table-column prop="Platform" label="平台" :filters="platformFilter" :filter-method="filterPlatform" />
+    <el-table-column prop="AreaName" label="分区" :filters="areaFilter" :filter-method="filterArea" />
     <el-table-column prop="Title" label="直播标题" />
     <el-table-column prop="LiveStatus" label="直播状态" sortable>
       <template #default="scope">
-        <el-tag :type="status2Type(scope.row.LiveStatus)"
-          >{{ status2Name(scope.row.LiveStatus) }}
+        <el-tag :type="status2Type(scope.row.LiveStatus)">{{ status2Name(scope.row.LiveStatus) }}
         </el-tag>
       </template>
     </el-table-column>
@@ -46,8 +36,7 @@
     <el-table-column prop="RecordTime" label="录制时长" />
     <el-table-column prop="State" label="录制状态" sortable>
       <template #default="scope">
-        <el-tag :type="state2Type(scope.row.State)"
-          >{{ state2Name(scope.row.State) }}
+        <el-tag :type="state2Type(scope.row.State)">{{ state2Name(scope.row.State) }}
         </el-tag>
       </template>
     </el-table-column>
@@ -236,7 +225,6 @@ export default defineComponent({
     stillTwo(num: number) {
       return ("0" + num).substr(-2);
     },
-
     date2string(date: Date) {
       return `${date.getFullYear()}-${this.stillTwo(
         date.getMonth() + 1
@@ -268,7 +256,7 @@ export default defineComponent({
       console.log(room)
       mitter.emit('changeRoomInfoVisible', this.showRoomInfo);
       mitter.emit('changeRoomInfo', this.room);
-    }
+    },
   },
 });
 </script>

@@ -21,9 +21,9 @@
       <el-menu-item index="1-2">
         <router-link to="/areainfo">分区信息</router-link>
       </el-menu-item>
-      <el-menu-item index="1-3">
+      <!-- <el-menu-item index="1-3">
         <router-link to="/livestatistics">直播统计</router-link>
-      </el-menu-item>
+      </el-menu-item> -->
       <!-- <el-menu-item index="1-4">
         <router-link to="/livewatch">观看直播</router-link>
       </el-menu-item> -->
