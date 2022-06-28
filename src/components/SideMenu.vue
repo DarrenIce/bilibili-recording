@@ -24,9 +24,9 @@
       <el-menu-item index="1-3">
         <router-link to="/livestatistics">直播统计</router-link>
       </el-menu-item>
-      <el-menu-item index="1-4">
+      <!-- <el-menu-item index="1-4">
         <router-link to="/livewatch">观看直播</router-link>
-      </el-menu-item>
+      </el-menu-item> -->
     </el-submenu>
     <el-submenu index="2">
       <template #title>
@@ -40,28 +40,33 @@
       <el-menu-item index="2-1" @click="onAddRoom()">
         添加房间监控
       </el-menu-item>
-      <el-menu-item index="2-2">
+      <el-menu-item index="2-2" @click="onAddArea()">
         添加分区
       </el-menu-item>
     </el-submenu>
   </el-menu>
   <AddRoomComponent></AddRoomComponent>
+  <AddAreaComponent></AddAreaComponent>
 </template>
 
 <script lang="ts">
 import mitter from '@/define/mitt'
 import { defineComponent } from 'vue'
 import AddRoomComponent from '@/components/AddRoom.vue'
+import AddAreaComponent from '@/components/AddArea.vue'
 
 export default defineComponent({
   name: 'SideMenu',
   components: {
-    AddRoomComponent
+    AddRoomComponent,
+    AddAreaComponent
   },
   methods: {
     onAddRoom() {
-      console.log(1)
       mitter.emit('changeAddRoomVisible', true);
+    },
+    onAddArea() {
+      mitter.emit('showAddArea', true);
     }
   }
 })
