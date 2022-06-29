@@ -16,7 +16,11 @@
     </el-col>
   </el-row>
   <el-table :default-sort="{ prop: 'State', order: 'descending' }" :data="roomTable">
-    <el-table-column prop="RoomID" label="房间ID" sortable />
+    <el-table-column prop="RoomID" label="房间ID" sortable>
+      <template #default="scope">
+        <el-link :href="roomID2URL(scope.row)" type="info" :underline="false">{{ scope.row.RoomID }}</el-link>
+      </template>
+    </el-table-column>
     <el-table-column prop="Uname" label="主播">
       <template #default="scope">
         <router-link :to="'/livestatistics/' + scope.row.Uname">{{ scope.row.Uname }}</router-link>
@@ -257,6 +261,16 @@ export default defineComponent({
       mitter.emit('changeRoomInfoVisible', this.showRoomInfo);
       mitter.emit('changeRoomInfo', this.room);
     },
+    roomID2URL(item: RoomInfo) {
+      if (item.Platform == 'bilibili') {
+        return `https://live.bilibili.com/${item.RoomID}`
+      } else if (item.Platform == 'douyin') {
+        return `https://live.douyin.com/${item.RoomID}`
+      } else if (item.Platform == 'huya') {
+        return `https://www.huya.com/${item.RoomID}`
+      }
+      return ''
+    }
   },
 });
 </script>

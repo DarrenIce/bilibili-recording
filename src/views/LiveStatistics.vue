@@ -31,8 +31,8 @@
             <v-chart v-show="showCharts" :autoresize="true" :option="revenueChartOptions" @click="onClickRich($event)">
             </v-chart>
         </div>
-        <div style="width: 800px; height: 400px">
-            <v-chart v-show="showSengGiftsChart" :autoresize="true" :option="sendGiftsChartOptions"></v-chart>
+        <div style="width: 800px; height: 400px" v-show="showSengGiftsChart">
+            <v-chart :autoresize="true" :option="sendGiftsChartOptions"></v-chart>
         </div>
     </el-row>
     <div style="width: 800px; height: 500px">
@@ -59,6 +59,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { ECharts } from 'echarts/core';
 import { ArrowUpBold, ArrowDownBold } from "@element-plus/icons-vue";
 import 'echarts-wordcloud';
+var randomColor = require('randomcolor');
 
 echarts.use([
     TitleComponent,
@@ -208,8 +209,10 @@ export default defineComponent({
                 .then((res) => res.json())
                 .then((json) => {
                     console.log(json);
-                    this.showWordCloud = true;
-                    this.setWordCloud(json);
+                    if (json.length > 0) {
+                        this.showWordCloud = true;
+                        this.setWordCloud(json);
+                    }
                 })
                 .catch((err) => {
                     console.log(err);
@@ -305,6 +308,9 @@ export default defineComponent({
             }
         },
         setWordCloud(json: any) {
+            this.wordClodChartOptions.tooltip = {
+                trigger: 'item',
+            };
             this.wordClodChartOptions.series = {
                 type: 'wordCloud',
                 shape: 'diamond',
@@ -312,8 +318,8 @@ export default defineComponent({
                 top: 'center',
                 right: null,
                 bottom: null,
-                width: '50%',
-                height: '50%',
+                width: '70%',
+                height: '80%',
                 sizeRange: [18, 100],
                 rotationRange: [0, 0],
                 rotationStep: 45,
@@ -322,10 +328,21 @@ export default defineComponent({
                 textStyle: {
                     // normal: {
                     fontFamily: 'PingFangSC-Regular, PingFang SC',
-                    fontWeight: 'normal'
+                    fontWeight: 'normal',
+                    color: function () {
+                        return randomColor({ hue: '#1785ff', count: 1 })[0];
+                    }
                     // },
                 },
                 data: json,
+                emphasis: {
+                    focus: 'self',
+
+                    textStyle: {
+                        textShadowBlur: 10,
+                        textShadowColor: '#333'
+                    }
+                },
             }
         },
         onClickMedal(param: any) {

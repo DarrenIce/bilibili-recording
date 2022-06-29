@@ -35,6 +35,9 @@
     </el-col>
   </el-row>
   <div class="mainContainer" v-show="isShowLive">
+    <el-row justify="center">
+    <el-tag v-show="isShowTitle" round effect="light">{{ liveTitle }}</el-tag>
+    </el-row>
     <!-- <el-input v-model="liveurl" clearable></el-input> -->
     <div class="video-container">
       <div>
@@ -118,6 +121,8 @@ export default defineComponent({
     let isShowLive: boolean = false;
     let liveurl: string = "";
     let flvPlayer = {} as flvjs.Player;
+    let isShowTitle: boolean = false;
+    let liveTitle: string = ''
     return {
       searchTitle,
       searchAnchor,
@@ -133,6 +138,8 @@ export default defineComponent({
       isShowLive,
       liveurl,
       flvPlayer,
+      isShowTitle,
+      liveTitle
     };
   },
   mounted() {
@@ -316,6 +323,8 @@ export default defineComponent({
             this.liveurl = json['liveurl']
             this.videoPlayer(json['liveurl'])
             this.isShowLive = true;
+            this.isShowTitle = true;
+            this.liveTitle = `${item.Uname}-${item.Title}`
           } else {
             ElNotification({
               title: '直播流解析失败',
@@ -354,7 +363,7 @@ export default defineComponent({
           });
         this.flvPlayer.attachMediaElement(videoElement as HTMLMediaElement);
         this.flvPlayer.load();
-        this.flvPlayer.volume = 0.2;
+        this.flvPlayer.volume = 0.8;
         this.flvPlayer.on(flvjs.Events.ERROR, (errorType: any, errorDetail: any, errorInfo: any) => {
           //视频出错后销毁重新创建
           console.log(errorType, errorDetail, errorInfo);
@@ -378,6 +387,7 @@ export default defineComponent({
       this.flvPlayer.detachMediaElement();
       this.flvPlayer.destroy();
       this.isShowLive = false;
+      this.isShowTitle = false;
       // this.flvPlayer = null;
     },
   },
