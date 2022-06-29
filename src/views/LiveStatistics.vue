@@ -14,12 +14,55 @@
             </el-dropdown-menu>
         </template>
     </el-dropdown>
+    <el-row justify="center">
+        <el-tag v-show="showCharts" round effect="light">{{ selectedTitle }}</el-tag>
+        <ArrowUpBold style="position:relative; width: 2em; height: 2em; top: 1px; left: 3px" @click="onClickPrev()"></ArrowUpBold>
+        <ArrowDownBold style="position:relative; width: 2em; height: 2em; bottom: 2px; left: 6px" @click="onClickNext()"></ArrowDownBold>
+    </el-row>
+    <div style="width: 1200px; height: 500px">
+        <v-chart v-show="showCharts" :autoresize="true" :option="medalChartOptions" @click="onClickMedal($event)"
+            ref="medalChart">
+        </v-chart>
+    </div>
+    <el-row>
+    <div style="width: 800px; height: 500px">
+        <v-chart v-show="showCharts" :autoresize="true" :option="revenueChartOptions" @click="onClickRich($event)"></v-chart>
+    </div>
+    <div style="width: 800px; height: 400px">
+        <v-chart v-show="showSengGiftsChart" :autoresize="true" :option="sendGiftsChartOptions"></v-chart>
+    </div>
+    </el-row>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { ip, port } from "@/define/const";
+import VECharts from 'vue-echarts'
+import { EChartsOption, ECBasicOption } from 'echarts/types/dist/shared';
+import * as echarts from 'echarts/core';
+import {
+    TitleComponent,
+    TooltipComponent,
+    LegendComponent,
+    GridComponent,
+} from 'echarts/components';
+import { PieChart, BarChart } from 'echarts/charts';
+import { LabelLayout } from 'echarts/features';
+import { CanvasRenderer } from 'echarts/renderers';
+import { ECharts } from 'echarts/core';
+import { ArrowUpBold, ArrowDownBold } from "@element-plus/icons-vue";
+
+echarts.use([
+    TitleComponent,
+    TooltipComponent,
+    LegendComponent,
+    PieChart,
+    CanvasRenderer,
+    LabelLayout,
+    BarChart,
+    GridComponent
+]);
 
 interface brgInfo {
     title: string,
@@ -34,10 +77,37 @@ export default defineComponent({
             route,
         }
     },
+    components: {
+        'v-chart': VECharts,
+        ArrowUpBold,
+        ArrowDownBold,
+    },
     data() {
         let brgLst: brgInfo[] = [];
+        let showCharts: boolean = false;
+        let showSengGiftsChart: boolean = false;
+        let medalChartOptions: EChartsOption = {} as EChartsOption;
+        let revenueChartOptions: EChartsOption = {} as EChartsOption;
+        let sendGiftsChartOptions: EChartsOption = {} as EChartsOption;
+        let initOptions = {
+            renderer: 'canvas',
+            width: 'auto',
+            height: 'auto'
+        };
+        let selectedTitle: string = "";
+        let receivedJson = {} as any;
+        let menuIndex = 1;
         return {
             brgLst,
+            showCharts,
+            showSengGiftsChart,
+            medalChartOptions,
+            revenueChartOptions,
+            initOptions,
+            sendGiftsChartOptions,
+            selectedTitle,
+            receivedJson,
+            menuIndex
         }
     },
     mounted() {
@@ -74,6 +144,12 @@ export default defineComponent({
         },
         fetchStatistics(brginfo: brgInfo) {
             console.log(brginfo)
+            for (let key in this.brgLst) {
+                if (this.brgLst[key].file_name === brginfo.file_name) {
+                    this.menuIndex = Number(key);
+                }
+            }
+            this.selectedTitle = this.date2string(new Date(brginfo.timestamp * 1000)) + brginfo.title
             fetch(`${ip}:${port}/livebackstatistics`, {
                 method: "post",
                 headers: {
@@ -93,7 +169,11 @@ export default defineComponent({
                 .then((res) => res.json())
                 .then((json) => {
                     console.log(json);
-
+                    this.showCharts = true;
+                    this.showSengGiftsChart = false;
+                    this.setMedalChartOptions(json['medal_statistics']);
+                    this.setRevenueChartOptions(json['revenue_statistics'])
+                    this.receivedJson = json;
                 })
                 .catch((err) => {
                     console.log(err);
@@ -111,6 +191,205 @@ export default defineComponent({
                 date.getSeconds()
             )}`;
         },
-    }
+        setMedalChartOptions(json: any) {
+            this.medalChartOptions.title = {
+                text: '直播间勋章统计',
+                left: 'center',
+
+            };
+            this.medalChartOptions.tooltip = {
+                trigger: 'item',
+                formatter: '{b} : {c} ({d}%)'
+            };
+            let medals: string[] = []
+            let data: any[] = [];
+            for (let key in json) {
+                medals.push(json[key]['medal_name'])
+                data.push({ value: json[key]['num'], name: json[key]['medal_name'] })
+            }
+            this.medalChartOptions.legend = {
+                orient: 'vertical',
+                left: 'left',
+                data: medals,
+                type: 'scroll',
+            }
+            this.medalChartOptions.series = {
+                type: 'pie',
+                radius: '50%',
+                center: ['40%', '50%'],
+                selectedMode: 'single',
+                // itemStyle: {
+                //     borderColor: '#fff',
+                //     borderWidth: 1
+                // },
+                data: data,
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }
+
+        },
+        setRevenueChartOptions(json: any) {
+            this.revenueChartOptions.title = {
+                text: `本次直播收到${json['total_revenue'] / 1000}元打赏`
+            }
+            this.revenueChartOptions.tooltip = {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            }
+            this.revenueChartOptions.grid = {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            }
+            this.revenueChartOptions.xAxis = {
+                type: 'value',
+                boundaryGap: [0, 0.01]
+            }
+            let ydata: string[] = [];
+            let xdata: number[] = [];
+            for (let key in json['rich_ranking']) {
+                ydata.push(json['rich_ranking'][key]['uname'])
+                xdata.push(json['rich_ranking'][key]['total_send_price'] / 1000)
+            }
+            this.revenueChartOptions.yAxis = {
+                type: 'category',
+                data: ydata.reverse(),
+            };
+            this.revenueChartOptions.series = {
+                type: 'bar',
+                data: xdata.reverse()
+            }
+        },
+        onClickMedal(param: any) {
+            console.log(param.data.name)
+            let data: any[] = [];
+            for (let key in this.receivedJson['medal_statistics']) {
+                if (this.receivedJson['medal_statistics'][key]['medal_name'] !== param.data.name) {
+                    data.push({ name: this.receivedJson['medal_statistics'][key]['medal_name'], value: this.receivedJson['medal_statistics'][key]['num'] })
+                } else {
+                    data.push({
+                        name: this.receivedJson['medal_statistics'][key]['medal_name'],
+                        value: this.receivedJson['medal_statistics'][key]['num'],
+                        label: {
+                            alignTo: 'edge',
+                            formatter: `{medal|${this.receivedJson['medal_statistics'][key]['medal_name']}}\n所属主播:${this.receivedJson['medal_statistics'][key]['anchor_name']}`,
+                            // backgroundColor: '#eee',
+                            // borderColor: '#777',
+                            // borderWidth: 3,
+                            // borderRadius: 4,
+                            minMargin: 5,
+                            // edgeDistance: 10,
+                            lineHeight: 15,
+                            rich: {
+                                medal: {
+                                    color: '#FFFFFF',
+                                    backgroundColor: '#FA9DA6',
+                                    padding: [2, 4],
+                                    borderRadius: 2,
+                                    align: 'center',
+                                }
+                            }
+                        },
+                        labelLine: {
+                            length: 15,
+                            length2: 0,
+                            maxSurfaceAngle: 80
+                        },
+                    })
+                }
+            }
+            let soptions: ECBasicOption = {
+                series: {
+                    type: 'pie',
+                    radius: '50%',
+                    center: ['50%', '50%'],
+                    selectedMode: 'single',
+                    itemStyle: {
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    },
+                    data: data,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            }
+            let medalChart: ECharts = this.$refs.medalChart as ECharts;
+            medalChart.setOption(soptions, {
+                replaceMerge: ['series']
+            })
+        },
+        onClickRich(param: any) {
+            console.log(param.name);
+            this.sendGiftsChartOptions.title = {
+                text: `${param.name}送礼详情`,
+                left: 'center',
+            };
+            this.sendGiftsChartOptions.tooltip = {
+                trigger: 'item',
+                formatter: '{b} : {c} ({d}%)'
+            };
+            let gifts: string[] = [];
+            let data: any[] = [];
+            for (let key of this.receivedJson['revenue_statistics']['rich_ranking']) {
+                if (key['uname'] === param.name) {
+                    for (let key2 of key['send_gifts']) {
+                        if (gifts.indexOf(key2['gift_name']) === -1) {
+                            gifts.push(key2['gift_name']);
+                            data.push({name: key2['gift_name'], value: key2['price'] / 1000});
+                        } else {
+                            for (let key3 in data) {
+                                if (data[key3].name === key2['gift_name']) {
+                                    data[key3].value += key2['price'] / 1000;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            this.sendGiftsChartOptions.legend = {
+                orient: 'vertical',
+                left: 'left',
+                data: gifts
+            }
+            this.sendGiftsChartOptions.series = {
+                type: 'pie',
+                radius: '50%',
+                center: ['40%', '50%'],
+                selectedMode: 'single',
+                itemStyle: {
+                    borderColor: '#fff',
+                    borderWidth: 1
+                },
+                data: data,
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }
+            this.showSengGiftsChart = true;
+        },
+        onClickPrev() {
+            this.fetchStatistics(this.brgLst[this.menuIndex - 1]);
+        },
+        onClickNext() {
+            this.fetchStatistics(this.brgLst[this.menuIndex + 1]);
+        }
+    },
 })
 </script>
