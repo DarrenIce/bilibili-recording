@@ -16,8 +16,10 @@
     </el-dropdown>
     <el-row justify="center">
         <el-tag v-show="showCharts" round effect="light">{{ selectedTitle }}</el-tag>
-        <ArrowUpBold style="position:relative; width: 2em; height: 2em; top: 1px; left: 3px" @click="onClickPrev()"></ArrowUpBold>
-        <ArrowDownBold style="position:relative; width: 2em; height: 2em; bottom: 2px; left: 6px" @click="onClickNext()"></ArrowDownBold>
+        <ArrowUpBold style="position:relative; width: 2em; height: 2em; top: 1px; left: 3px" @click="onClickPrev()">
+        </ArrowUpBold>
+        <ArrowDownBold style="position:relative; width: 2em; height: 2em; bottom: 2px; left: 6px"
+            @click="onClickNext()"></ArrowDownBold>
     </el-row>
     <div style="width: 1200px; height: 500px">
         <v-chart v-show="showCharts" :autoresize="true" :option="medalChartOptions" @click="onClickMedal($event)"
@@ -25,13 +27,17 @@
         </v-chart>
     </div>
     <el-row>
-    <div style="width: 800px; height: 500px">
-        <v-chart v-show="showCharts" :autoresize="true" :option="revenueChartOptions" @click="onClickRich($event)"></v-chart>
-    </div>
-    <div style="width: 800px; height: 400px">
-        <v-chart v-show="showSengGiftsChart" :autoresize="true" :option="sendGiftsChartOptions"></v-chart>
-    </div>
+        <div style="width: 800px; height: 500px">
+            <v-chart v-show="showCharts" :autoresize="true" :option="revenueChartOptions" @click="onClickRich($event)">
+            </v-chart>
+        </div>
+        <div style="width: 800px; height: 400px">
+            <v-chart v-show="showSengGiftsChart" :autoresize="true" :option="sendGiftsChartOptions"></v-chart>
+        </div>
     </el-row>
+    <div style="width: 800px; height: 500px">
+        <v-chart v-show="showWordCloud" :autoresize="true" :option="wordClodChartOptions"></v-chart>
+    </div>
 </template>
 
 <script lang="ts">
@@ -52,6 +58,7 @@ import { LabelLayout } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import { ECharts } from 'echarts/core';
 import { ArrowUpBold, ArrowDownBold } from "@element-plus/icons-vue";
+import 'echarts-wordcloud';
 
 echarts.use([
     TitleComponent,
@@ -86,9 +93,11 @@ export default defineComponent({
         let brgLst: brgInfo[] = [];
         let showCharts: boolean = false;
         let showSengGiftsChart: boolean = false;
+        let showWordCloud: boolean = false;
         let medalChartOptions: EChartsOption = {} as EChartsOption;
         let revenueChartOptions: EChartsOption = {} as EChartsOption;
         let sendGiftsChartOptions: EChartsOption = {} as EChartsOption;
+        let wordClodChartOptions: any = {} as any;
         let initOptions = {
             renderer: 'canvas',
             width: 'auto',
@@ -101,8 +110,10 @@ export default defineComponent({
             brgLst,
             showCharts,
             showSengGiftsChart,
+            showWordCloud,
             medalChartOptions,
             revenueChartOptions,
+            wordClodChartOptions,
             initOptions,
             sendGiftsChartOptions,
             selectedTitle,
@@ -174,6 +185,31 @@ export default defineComponent({
                     this.setMedalChartOptions(json['medal_statistics']);
                     this.setRevenueChartOptions(json['revenue_statistics'])
                     this.receivedJson = json;
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+            fetch(`${ip}:${port}/getwordcloud`, {
+                method: "post",
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods":
+                        "POST, GET, OPTIONS, PUT, DELETE,UPDATE",
+                    "Access-Control-Allow-Headers":
+                        "Access-Control-Allow-Methods, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Content-Type": "application/json; charset=utf-8",
+                },
+                body: JSON.stringify({
+                    anchor_name: this.route.params.anchor,
+                    brg_file_name: brginfo.file_name,
+                }),
+            })
+                .then((res) => res.json())
+                .then((json) => {
+                    console.log(json);
+                    this.showWordCloud = true;
+                    this.setWordCloud(json);
                 })
                 .catch((err) => {
                     console.log(err);
@@ -268,6 +304,30 @@ export default defineComponent({
                 data: xdata.reverse()
             }
         },
+        setWordCloud(json: any) {
+            this.wordClodChartOptions.series = {
+                type: 'wordCloud',
+                shape: 'diamond',
+                left: 'center',
+                top: 'center',
+                right: null,
+                bottom: null,
+                width: '50%',
+                height: '50%',
+                sizeRange: [18, 100],
+                rotationRange: [0, 0],
+                rotationStep: 45,
+                gridSize: 10,
+                drawOutOfBound: false,
+                textStyle: {
+                    // normal: {
+                    fontFamily: 'PingFangSC-Regular, PingFang SC',
+                    fontWeight: 'normal'
+                    // },
+                },
+                data: json,
+            }
+        },
         onClickMedal(param: any) {
             console.log(param.data.name)
             let data: any[] = [];
@@ -348,7 +408,7 @@ export default defineComponent({
                     for (let key2 of key['send_gifts']) {
                         if (gifts.indexOf(key2['gift_name']) === -1) {
                             gifts.push(key2['gift_name']);
-                            data.push({name: key2['gift_name'], value: key2['price'] / 1000});
+                            data.push({ name: key2['gift_name'], value: key2['price'] / 1000 });
                         } else {
                             for (let key3 in data) {
                                 if (data[key3].name === key2['gift_name']) {
