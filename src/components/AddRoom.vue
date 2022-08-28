@@ -1,166 +1,93 @@
 <template>
-  <el-drawer
-    v-model="isShowAddRoom"
-    title="添加房间"
-    size="40%"
-    direction="ltr"
-  >
+  <el-drawer v-model="isShowAddRoom" title="添加房间" size="40%" direction="ltr">
     <el-form :model="roomInfo">
-    <el-row>
-        <el-col :span="10">
-        <el-form-item label="房间ID" label-width="60px">
-        <el-input v-model="roomInfo.roomID" autocomplete="off" style="width: 200px"></el-input>
-      </el-form-item>
+      <el-row>
+        <el-col :span="6">
+          <el-form-item label="房间ID" label-width="60px">
+            <el-input v-model="roomInfo.roomID" autocomplete="off" style="width: 150px"></el-input>
+          </el-form-item>
         </el-col>
         <el-col :span="2"></el-col>
-        <el-col :span="10">
-        <el-form-item label="平台" label-width="60px">
-        <el-input v-model="roomInfo.platform" style="width: 200px"></el-input>
-      </el-form-item>
+        <el-col :span="6">
+          <el-form-item label="主播名" label-width="60px">
+            <el-input v-model="roomInfo.name" autocomplete="off" style="width: 150px"></el-input>
+          </el-form-item>
         </el-col>
-    </el-row>
-      
+        <el-col :span="2"></el-col>
+        <el-col :span="6">
+          <el-form-item label="平台" label-width="60px">
+            <el-input v-model="roomInfo.platform" style="width: 150px"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
       <el-row>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.recordMode"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="24小时录制"
-              inactive-text="仅在设定时间录制"
-            />
+            <el-switch v-model="roomInfo.recordMode" active-color="#13ce66" inactive-color="#ff4949"
+              active-text="24小时录制" inactive-text="仅在设定时间录制" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.divideByTitle"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="当天录像按照标题分P"
-              inactive-text="当天录像不分P"
-            />
+            <el-switch v-model="roomInfo.divideByTitle" active-color="#13ce66" inactive-color="#ff4949"
+              active-text="当天录像按照标题分P" inactive-text="当天录像不分P" />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="6">
           <el-form-item label="录制开始时间" label-width="120px">
-            <el-time-picker
-              v-model="startTime"
-              :disabled="roomInfo.recordMode"
-              size="small"
-              format="HH:mm"
-              style="width: 100px"
-              @change="getStartTime()"
-            ></el-time-picker>
+            <el-time-picker v-model="startTime" :disabled="roomInfo.recordMode" size="small" format="HH:mm"
+              style="width: 100px" @change="getStartTime()"></el-time-picker>
           </el-form-item>
         </el-col>
         <el-col :span="4"></el-col>
         <el-col :span="8">
           <el-form-item label="录制结束时间" label-width="120px">
-            <el-time-picker
-              v-model="endTime"
-              :disabled="roomInfo.recordMode"
-              size="small"
-              format="HH:mm"
-              style="width: 100px"
-              @change="getEndTime()"
-            ></el-time-picker>
+            <el-time-picker v-model="endTime" :disabled="roomInfo.recordMode" size="small" format="HH:mm"
+              style="width: 100px" @change="getEndTime()"></el-time-picker>
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.autoRecord"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="自动录制"
-              inactive-text="仅监控"
-            />
+            <el-switch v-model="roomInfo.autoRecord" active-color="#13ce66" inactive-color="#ff4949" active-text="自动录制"
+              inactive-text="仅监控" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.autoUpload"
-              disabled
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="自动上传"
-              inactive-text="禁止上传"
-            />
+            <el-switch v-model="roomInfo.autoUpload" disabled active-color="#13ce66" inactive-color="#ff4949"
+              active-text="自动上传" inactive-text="禁止上传" />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.needM4a"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="转码生成视频和音频"
-              inactive-text="仅生成视频"
-            />
+            <el-switch v-model="roomInfo.needM4a" active-color="#13ce66" inactive-color="#ff4949"
+              active-text="转码生成视频和音频" inactive-text="仅生成视频" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.mp4Compress"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="视频质量压缩"
-              inactive-text="不压缩视频"
-            />
+            <el-switch v-model="roomInfo.mp4Compress" active-color="#13ce66" inactive-color="#ff4949"
+              active-text="视频质量压缩" inactive-text="不压缩视频" />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.cleanUpRegular"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="定期清理录制内容"
-              inactive-text="不清理生成的文件"
-            />
+            <el-switch v-model="roomInfo.cleanUpRegular" active-color="#13ce66" inactive-color="#ff4949"
+              active-text="定期清理录制内容" inactive-text="不清理生成的文件" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="文件保留时间" label-width="100px">
-            <el-input
-              v-model="roomInfo.saveDuration"
-              :disabled="!roomInfo.cleanUpRegular"
-              style="width: 100px"
-            ></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="12">
-          <el-form-item>
-            <el-switch
-              v-model="roomInfo.areaLock"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="只录制指定分区下的直播"
-              inactive-text="不限制直播分区"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="指定的分区名" label-width="100px">
-            <el-input
-              v-model="roomInfo.areaLimit"
-              :disabled="!roomInfo.areaLock"
-              style="width: 220px"
-            >
+            <el-input v-model="roomInfo.saveDuration" :disabled="!roomInfo.cleanUpRegular" style="width: 100px">
             </el-input>
           </el-form-item>
         </el-col>
@@ -168,28 +95,37 @@
       <el-row>
         <el-col :span="12">
           <el-form-item>
-            <el-switch
-              v-model="roomInfo.saveDanmu"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="录制弹幕"
-              inactive-text="不录制弹幕"
-            />
+            <el-switch v-model="roomInfo.areaLock" active-color="#13ce66" inactive-color="#ff4949"
+              active-text="只录制指定分区下的直播" inactive-text="不限制直播分区" />
           </el-form-item>
         </el-col>
-        </el-row>
+        <el-col :span="12">
+          <el-form-item label="指定的分区名" label-width="100px">
+            <el-input v-model="roomInfo.areaLimit" :disabled="!roomInfo.areaLock" style="width: 220px">
+            </el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="12">
+          <el-form-item>
+            <el-switch v-model="roomInfo.saveDanmu" active-color="#13ce66" inactive-color="#ff4949" active-text="录制弹幕"
+              inactive-text="不录制弹幕" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="14">
+          <el-form-item label="Cookies" label-width="40px">
+            <el-input v-model="roomInfo.cookies" autocomplete="off" style="width: 300px"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
     <div class="drawer-footer">
       <el-button-group>
-        <el-button icon="el-icon-circle-close" @click="isShowAddRoom = false"
-          >取消</el-button
-        >
-        <el-button
-          icon="el-icon-circle-check"
-          type="primary"
-          @click="onSubmit()"
-          >确定</el-button
-        >
+        <el-button icon="el-icon-circle-close" @click="isShowAddRoom = false">取消</el-button>
+        <el-button icon="el-icon-circle-check" type="primary" @click="onSubmit()">确定</el-button>
       </el-button-group>
     </div>
   </el-drawer>
@@ -221,6 +157,8 @@ export default defineComponent({
       areaLock: false,
       areaLimit: "放松电台,聊天电台,萌宅领域",
       saveDanmu: true,
+      name: "",
+      cookies: ""
     };
     return {
       roomInfo,
@@ -234,14 +172,14 @@ export default defineComponent({
       this.isShowAddRoom = e;
     });
     mitter.on('addMonitorRoom', (e: any) => {
-        this.roomInfo.roomID = e.RoomID;
-        this.roomInfo.platform = e.Platform;
-        this.isShowAddRoom = true;
+      this.roomInfo.roomID = e.RoomID;
+      this.roomInfo.platform = e.Platform;
+      this.isShowAddRoom = true;
     })
   },
   methods: {
     onSubmit() {
-        fetch(`${ip}:${port}/roomhandle`, {
+      fetch(`${ip}:${port}/roomhandle`, {
         method: "post",
         headers: {
           "Access-Control-Allow-Origin": "*",

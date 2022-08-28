@@ -399,7 +399,7 @@ export default defineComponent({
         });
     },
     onSubmit() {
-      fetch(`${ip}:${port}/roomhandle`, {
+      fetch(`${ip}:${this.roomInfo.port}/roomhandle`, {
         method: "post",
         headers: {
           "Access-Control-Allow-Origin": "*",
@@ -442,7 +442,7 @@ export default defineComponent({
         });
     },
     onDecode() {
-      fetch(`${ip}:${port}/decode`, {
+      fetch(`${ip}:${this.roomInfo.port}/decode`, {
         method: "post",
         headers: {
           "Access-Control-Allow-Origin": "*",
@@ -515,6 +515,8 @@ export default defineComponent({
         areaLock: this.roomInfo.AreaLock,
         areaLimit: this.roomInfo.AreaLimit,
         saveDanmu: this.roomInfo.SaveDanmu,
+        name: this.roomInfo.Name,
+        cookies: this.roomInfo.Cookies
       };
     },
   },

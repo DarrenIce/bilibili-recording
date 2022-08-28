@@ -46,7 +46,8 @@
     </el-table-column>
     <el-table-column label="操作" fixed="right">
       <template #default="scope">
-        <el-button link type="primary" size="small" @click="onEdit(scope.row)">Edit</el-button>
+        <el-button link type="primary" size="small" @click="onEdit(scope.row)">E</el-button>
+        <el-button link type="primary" size="small" @click="refresh(scope.row)">R</el-button>
       </template>
     </el-table-column>
   </el-table>
@@ -65,6 +66,7 @@ import {
 } from "@/define/methods";
 import RoomInfoComponent from "@/components/RoomInfo.vue"
 import mitter from '@/define/mitt'
+import { ElNotification } from "element-plus";
 
 interface filter {
   text: string;
@@ -168,6 +170,8 @@ export default defineComponent({
               json[key].UploadStartTime,
               json[key].UploadEndTime
             );
+            
+            json[key].port = port;
             data.push(json[key]);
             if (tmp.indexOf(json[key]["AreaName"]) === -1) {
               tmp.push(json[key]["AreaName"]);
@@ -181,7 +185,52 @@ export default defineComponent({
           this.roomTable = data;
           this.result = "success";
           this.areaFilter = tmpareas;
-          // console.log(this.roomTable);
+        })
+        .catch((err) => {
+          console.log(err);
+          this.result = "error";
+          console.log(this.result);
+        });
+    },
+    fetchInfo(pport: string) {
+      fetch(`${ip}:${pport}/livestatus`, {
+        method: "get",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods":
+            "POST, GET, OPTIONS, PUT, DELETE,UPDATE",
+          "Access-Control-Allow-Headers":
+            "Access-Control-Allow-Methods, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin",
+          "Access-Control-Allow-Credentials": "true",
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          for (let key in json) {
+            json[key]["LiveStartTime2"] = json[key]["LiveStartTime"];
+            json[key]["LiveStartTime"] = this.date2string(
+              new Date(parseInt(json[key]["LiveStartTime2"]) * 1000)
+            );
+            json[key].LiveTime = this.getTimeMiuns(
+              json[key].LiveStartTime2,
+              "0"
+            );
+            json[key].RecordTime = this.getTimeMiuns(
+              json[key].RecordStartTime,
+              json[key].RecordEndTime
+            );
+            json[key].DecodeTime = this.getTimeMiuns(
+              json[key].DecodeStartTime,
+              json[key].DecodeEndTime
+            );
+            json[key].UploadTime = this.getTimeMiuns(
+              json[key].UploadStartTime,
+              json[key].UploadEndTime
+            );
+            json[key].port = pport
+            this.roomTable.push(json[key]);
+          }
         })
         .catch((err) => {
           console.log(err);
@@ -260,6 +309,32 @@ export default defineComponent({
       console.log(room)
       mitter.emit('changeRoomInfoVisible', this.showRoomInfo);
       mitter.emit('changeRoomInfo', this.room);
+    },
+    refresh(room: RoomInfo) {
+      console.log(room.Uname)
+      fetch(`${ip}:${room.port}/refresh/${room.RoomID}`, {
+        method: "get",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods":
+            "POST, GET, OPTIONS, PUT, DELETE,UPDATE",
+          "Access-Control-Allow-Headers":
+            "Access-Control-Allow-Methods, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
+          "Access-Control-Allow-Credentials": "true",
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+           ElNotification({
+            title: 'Refresh success',
+            message: json['msg'],
+            type: 'success',
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     },
     roomID2URL(item: RoomInfo) {
       if (item.Platform == 'bilibili') {

@@ -32,6 +32,9 @@ export interface RoomInfo {
     AutoRecord?: boolean;
     AutoUpload?: boolean;
     SaveDanmu?: boolean;
+    Name?: string;
+    Cookies?: string;
+    port?: string;
   }
   
   export interface DeviceInfo {
@@ -69,6 +72,8 @@ export interface RoomInfo {
     areaLock: boolean;
     areaLimit: string;
     saveDanmu: boolean;
+    name: string;
+    cookies: string;
   }
   
   export interface liveStream {
